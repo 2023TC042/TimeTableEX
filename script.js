@@ -1,4 +1,5 @@
 // シンプルな時間割アプリ（表示を変更：科目/教室/時間はセル上に常時出さず、編集モードでクリックした場合にのみ表示・編集）
+// 変更: モーダルやインジケータで表示するセル名を "r1-c1" 形式ではなく "月1" などの形式にしました。
 (function(){
   // 設定
   const DAYS = ["月","火","水","木","金"];
@@ -148,10 +149,9 @@
       // 何らかのデータが入っていることを分かる目印だけ出す
       const indicator = document.createElement("div");
       indicator.className = "cell-indicator";
-      indicator.title = "内容あり（クリックで詳細）";
+      indicator.title = `内容あり (${humanLabel(cellId)})`;
       td.appendChild(indicator);
 
-      // 編集モードの場合は、既存データの要約を薄く表示しても良いが
       // 要望に従い「科目名等は常時表示しない」ため省略する
       const ph = document.createElement("div");
       ph.className = "placeholder";
@@ -163,6 +163,16 @@
 
   function cellIdFor(period, col){
     return `r${period}-c${col}`;
+  }
+
+  // r{period}-c{col} を "月1" 形式に変換
+  function humanLabel(cellId){
+    const m = String(cellId).match(/^r(\d+)-c(\d+)$/);
+    if(!m) return cellId;
+    const period = m[1];
+    const col = parseInt(m[2], 10);
+    const day = DAYS[col - 1] || `c${col}`;
+    return `${day}${period}`;
   }
 
   // モーダル関連
@@ -207,9 +217,11 @@
       deleteBtn.style.display = "none";
     }
 
-    // モーダルタイトルにセル情報を追記
+    // モーダルタイトルにセル情報を追記（r1-c1 ではなく 月1 形式）
     const title = document.getElementById("modalTitle");
-    title.textContent = editingEnabled ? `コマ編集 (${cellId})` : `課題確認 (${cellId})`;
+    title.textContent = editingEnabled
+      ? `コマ編集 (${humanLabel(cellId)})`
+      : `課題確認 (${humanLabel(cellId)})`;
 
     modal.classList.remove("hidden");
 
