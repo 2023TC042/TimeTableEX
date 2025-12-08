@@ -1,6 +1,4 @@
-// シンプルな時間割アプリ
-// 仕様: 月-金 x 1-6時限、各セルに科目/教室/時間 + 課題15チェック、背景色選択、localStorage 保存
-
+// シンプルな時間割アプリ（表示を変更：科目/教室/時間はセル上に常時出さず、編集モードでクリックした場合にのみ表示・編集）
 (function(){
   // 設定
   const DAYS = ["月","火","水","木","金"];
@@ -43,10 +41,6 @@
       editToggle.checked = false;
     }
 
-    editToggle.addEventListener("change", () => {
-      // モード切替時の反映（編集ボタンの表示など）
-      // 今回はモーダル側で確認する実装なのでここは最小限
-    });
     bgPicker.addEventListener("input", () => {
       settings.bgColor = bgPicker.value;
       applyBgColor();
@@ -61,6 +55,11 @@
     modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
     // キーボード: Esc で閉じる
     document.addEventListener("keydown", (e)=>{ if(e.key === "Escape") closeModal(); });
+
+    // 編集モード切替時にセルの表示を更新
+    editToggle.addEventListener("change", () => {
+      renderAll();
+    });
   }
 
   function loadSettings(){
@@ -137,28 +136,28 @@
     if(!td) return;
     const data = store[cellId];
     td.innerHTML = "";
-    if(!data || (!data.subject && !data.room && !data.time)){
+
+    // 仕様変更: セル上に科目/教室/時間は常時表示しない
+    // - データがある場合は小さなインジケータを表示するだけ（内容自体は隠す）
+    if(!data || (!data.subject && !data.room && !data.time && !(data.assignments && data.assignments.some(Boolean)))){
       const ph = document.createElement("div");
       ph.className = "placeholder";
-      ph.textContent = "（空）クリックして追加";
+      ph.textContent = "（空）";
       td.appendChild(ph);
     }else{
-      const title = document.createElement("div");
-      title.className = "cell-title";
-      title.textContent = data.subject || "（科目なし）";
-      td.appendChild(title);
+      // 何らかのデータが入っていることを分かる目印だけ出す
+      const indicator = document.createElement("div");
+      indicator.className = "cell-indicator";
+      indicator.title = "内容あり（クリックで詳細）";
+      td.appendChild(indicator);
 
-      const meta = document.createElement("div");
-      meta.className = "cell-meta";
-      meta.textContent = data.room || "";
-      td.appendChild(meta);
-
-      if(data.time){
-        const time = document.createElement("div");
-        time.className = "cell-time";
-        time.textContent = data.time;
-        td.appendChild(time);
-      }
+      // 編集モードの場合は、既存データの要約を薄く表示しても良いが
+      // 要望に従い「科目名等は常時表示しない」ため省略する
+      const ph = document.createElement("div");
+      ph.className = "placeholder";
+      ph.textContent = "（登録あり）";
+      ph.style.opacity = 0.6;
+      td.appendChild(ph);
     }
   }
 
@@ -170,23 +169,51 @@
   function openCell(cellId){
     currentCellId = cellId;
     const data = store[cellId] || createEmptyCell();
-    // 画面にデータを入れる
-    subjectInput.value = data.subject || "";
-    roomInput.value = data.room || "";
-    timeInput.value = data.time || "";
+
+    // 課題チェックは常に表示（要求されている「課題の確認ができる」を維持）
     buildAssignments(data.assignments || []);
-    // 編集可否を切り替え
+
     const editingEnabled = editToggle.checked;
-    subjectInput.disabled = !editingEnabled;
-    roomInput.disabled = !editingEnabled;
-    timeInput.disabled = !editingEnabled;
-    saveBtn.style.display = editingEnabled ? "" : "none";
-    deleteBtn.style.display = editingEnabled ? "" : "none";
+
+    // 編集モードのときのみ科目名等の入力フィールドを表示して編集可能にする
+    // 編集モードでない場合は入力フィールドを非表示にする（課題は操作可能）
+    if(editingEnabled){
+      // 表示して編集可
+      subjectInput.parentElement.style.display = "";
+      roomInput.parentElement.style.display = "";
+      timeInput.parentElement.style.display = "";
+
+      subjectInput.disabled = false;
+      roomInput.disabled = false;
+      timeInput.disabled = false;
+
+      subjectInput.value = data.subject || "";
+      roomInput.value = data.room || "";
+      timeInput.value = data.time || "";
+
+      saveBtn.style.display = "";
+      deleteBtn.style.display = "";
+    }else{
+      // 非表示かつ編集不可にする
+      subjectInput.parentElement.style.display = "none";
+      roomInput.parentElement.style.display = "none";
+      timeInput.parentElement.style.display = "none";
+
+      subjectInput.disabled = true;
+      roomInput.disabled = true;
+      timeInput.disabled = true;
+
+      saveBtn.style.display = "none";
+      deleteBtn.style.display = "none";
+    }
+
     // モーダルタイトルにセル情報を追記
     const title = document.getElementById("modalTitle");
-    title.textContent = `コマ編集 (${cellId})`;
+    title.textContent = editingEnabled ? `コマ編集 (${cellId})` : `課題確認 (${cellId})`;
+
     modal.classList.remove("hidden");
-    // フォーカス
+
+    // 編集モードなら最初の入力にフォーカス
     if(editingEnabled) subjectInput.focus();
   }
 
@@ -215,15 +242,15 @@
       cb.checked = !!arr[i];
       cb.dataset.index = i;
       // 課題は閲覧モードでも操作できる（課題の完了をつけるため）
-      // ただし課題ラベルの見た目は同一
       cb.addEventListener("change", () => {
-        // 直接ストアに反映して保存（課題チェックは編集モードに依らず即時保存）
         if(!currentCellId) return;
         const cell = store[currentCellId] || createEmptyCell();
         cell.assignments = cell.assignments || new Array(ASSIGNMENT_COUNT).fill(false);
         cell.assignments[i] = cb.checked;
         store[currentCellId] = cell;
         saveData();
+        // セルのインジケータは変わる可能性があるので再描画
+        renderCell(currentCellId);
       });
       const span = document.createElement("span");
       span.textContent = `課題 ${i+1}`;
@@ -238,13 +265,11 @@
     const subject = subjectInput.value.trim();
     const room = roomInput.value.trim();
     const time = timeInput.value.trim();
-    // assignments: collect current checkbox states
     const assignmentChecks = Array.from(assignmentsGrid.querySelectorAll("input[type=checkbox]")).map(cb => cb.checked);
     const cell = {
       subject, room, time,
       assignments: assignmentChecks
     };
-    // 若すべて空（subject, room, time 空かつ全チェックfalse）なら削除扱い
     const hasContent = subject || room || time || assignmentChecks.some(Boolean);
     if(hasContent){
       store[currentCellId] = cell;
@@ -258,7 +283,7 @@
 
   function handleDelete(){
     if(!currentCellId) return;
-    if(!confirm("このコマを削除しますか？")) return;
+    if(!confirm("このコマの内容を削除しますか？")) return;
     delete store[currentCellId];
     saveData();
     renderCell(currentCellId);
@@ -266,7 +291,7 @@
   }
 
   function handleClearAll(){
-    if(!confirm("保存されている全てのデータを消去します。")) return;
+    if(!confirm("保存されている全てのデータを消去します。よろしいですか？")) return;
     store = {};
     settings = { bgColor: "#ffffff" };
     saveData();
