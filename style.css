@@ -44,6 +44,18 @@ th{background:#f3f6fb;font-weight:600;text-align:center}
 .cell-actions{position:absolute;right:6px;top:6px}
 .placeholder{opacity:0.45;font-style:italic;color:#666}
 
+/* セル内の簡易インジケータ（内容あり） */
+.cell-indicator{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--accent);
+  position:absolute;
+  right:8px;
+  bottom:8px;
+  box-shadow:0 0 4px rgba(0,0,0,0.15);
+}
+
 /* モーダル */
 .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);z-index:9999}
 .hidden{display:none}
@@ -59,6 +71,9 @@ button:hover{filter:brightness(0.98)}
 button.danger{background:#ffdede;border-color:#f0a}
 #saveBtn{background:var(--accent);color:#fff;border:none}
 #saveBtn:hover{filter:brightness(0.95)}
+
+/* モーダルの入力フィールドブロックを区別しやすくする */
+#editFields{margin-bottom:8px}
 
 /* スマホ向け */
 @media(max-width:640px){
