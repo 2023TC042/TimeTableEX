@@ -1,5 +1,4 @@
-// シンプルな時間割アプリ（表示を変更：科目/教室/時間はセル上に常時出さず、編集モードでクリックした場合にのみ表示・編集）
-// 変更: モーダルやインジケータで表示するセル名を "r1-c1" 形式ではなく "月1" などの形式にしました。
+// シンプルな時間割アプリ（変更点：入力済みコマは科目名をセル上に表示、課題チェックはコマをクリックして開いたモーダル内でのみ表示）
 (function(){
   // 設定
   const DAYS = ["月","火","水","木","金"];
@@ -138,27 +137,44 @@
     const data = store[cellId];
     td.innerHTML = "";
 
-    // 仕様変更: セル上に科目/教室/時間は常時表示しない
-    // - データがある場合は小さなインジケータを表示するだけ（内容自体は隠す）
-    if(!data || (!data.subject && !data.room && !data.time && !(data.assignments && data.assignments.some(Boolean)))){
-      const ph = document.createElement("div");
-      ph.className = "placeholder";
-      ph.textContent = "（空）";
-      td.appendChild(ph);
-    }else{
-      // 何らかのデータが入っていることを分かる目印だけ出す
+    // 要望: 入力された科目名があればセル上に常時表示する
+    if(data && data.subject){
+      const title = document.createElement("div");
+      title.className = "cell-title";
+      title.textContent = data.subject;
+      td.appendChild(title);
+
+      // 小さなインジケータは残す（課題など他データの有無を示すため）
+      if((data.assignments && data.assignments.some(Boolean)) || data.room || data.time){
+        const indicator = document.createElement("div");
+        indicator.className = "cell-indicator";
+        indicator.title = `詳細あり (${humanLabel(cellId)})`;
+        td.appendChild(indicator);
+      }
+      // 科目名のみ表示する仕様なので教室や時間はセル上に出さない
+      return;
+    }
+
+    // 科目名がないが他データ（課題チェック等）がある場合は目印のみ表示
+    if(data && ((data.assignments && data.assignments.some(Boolean)) || data.room || data.time)){
       const indicator = document.createElement("div");
       indicator.className = "cell-indicator";
       indicator.title = `内容あり (${humanLabel(cellId)})`;
       td.appendChild(indicator);
 
-      // 要望に従い「科目名等は常時表示しない」ため省略する
       const ph = document.createElement("div");
       ph.className = "placeholder";
       ph.textContent = "（登録あり）";
       ph.style.opacity = 0.6;
       td.appendChild(ph);
+      return;
     }
+
+    // 完全に空の場合
+    const ph = document.createElement("div");
+    ph.className = "placeholder";
+    ph.textContent = "（空）";
+    td.appendChild(ph);
   }
 
   function cellIdFor(period, col){
@@ -180,15 +196,14 @@
     currentCellId = cellId;
     const data = store[cellId] || createEmptyCell();
 
-    // 課題チェックは常に表示（要求されている「課題の確認ができる」を維持）
+    // 課題チェックは「コマをクリックしてから」表示する = モーダル内にだけ作る（ここで生成）
     buildAssignments(data.assignments || []);
 
     const editingEnabled = editToggle.checked;
 
     // 編集モードのときのみ科目名等の入力フィールドを表示して編集可能にする
-    // 編集モードでない場合は入力フィールドを非表示にする（課題は操作可能）
+    // 編集モードでない場合は入力フィールドは非表示（課題は操作可能）
     if(editingEnabled){
-      // 表示して編集可
       subjectInput.parentElement.style.display = "";
       roomInput.parentElement.style.display = "";
       timeInput.parentElement.style.display = "";
@@ -204,7 +219,6 @@
       saveBtn.style.display = "";
       deleteBtn.style.display = "";
     }else{
-      // 非表示かつ編集不可にする
       subjectInput.parentElement.style.display = "none";
       roomInput.parentElement.style.display = "none";
       timeInput.parentElement.style.display = "none";
@@ -217,7 +231,7 @@
       deleteBtn.style.display = "none";
     }
 
-    // モーダルタイトルにセル情報を追記（r1-c1 ではなく 月1 形式）
+    // モーダルタイトルにセル情報を追記（"月1" 形式）
     const title = document.getElementById("modalTitle");
     title.textContent = editingEnabled
       ? `コマ編集 (${humanLabel(cellId)})`
@@ -244,6 +258,7 @@
   }
 
   function buildAssignments(arr){
+    // モーダル内にだけチェックボックスを生成（課題はコマをクリックして初めて表示）
     assignmentsGrid.innerHTML = "";
     for(let i=0;i<ASSIGNMENT_COUNT;i++){
       const id = `as_${i+1}`;
@@ -261,7 +276,7 @@
         cell.assignments[i] = cb.checked;
         store[currentCellId] = cell;
         saveData();
-        // セルのインジケータは変わる可能性があるので再描画
+        // セル表示（インジケータや科目名の有無）に影響する場合があるので再描画
         renderCell(currentCellId);
       });
       const span = document.createElement("span");
