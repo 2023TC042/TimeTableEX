@@ -1,66 +1,152 @@
 :root{
-  --accent:#2d7bef;
-  --bg:#ffffff;
-  --cell-border:#ddd;
-  --cell-bg:#fafafa;
-  --cell-padding:8px;
+  --accent:#333;        /* ヘッダー色 */
+  --bg:#ffffff;         /* ページ背景（カラーピッカーで上書き） */
+  --line:#cfcfcf;       /* グリッド線 */
+  --left-col:#f0f0f0;   /* 左列背景 */
+  --text:#111;
+  --title-font: "Hiragino Mincho ProN", "Yu Mincho", "serif";
+  --ui-font: system-ui, -apple-system, "Segoe UI", "Noto Sans JP", "Meiryo", sans-serif;
 }
 
+/* Reset-ish */
 *{box-sizing:border-box}
 body{
-  font-family:system-ui,-apple-system,Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
   margin:0;
-  padding:16px;
+  padding:32px 20px;
   background:var(--bg);
-  color:#111;
+  color:var(--text);
+  font-family:var(--ui-font);
 }
 
+/* Header / Title */
 header{
+  max-width:760px;
+  margin:0 auto 18px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:16px;
-  margin-bottom:12px;
+  gap:12px;
+}
+.title-wrap{
+  width:100%;
+  text-align:center;
+}
+.title-wrap h1{
+  margin:0 0 8px 0;
+  font-family:var(--title-font);
+  font-size:22px;
+  letter-spacing:6px;
+  font-weight:400;
+  color:#222;
 }
 
-header h1{margin:0;font-size:1.2rem}
-.controls{display:flex;gap:12px;align-items:center}
+/* Controls (keep small and compact) */
+.controls{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-self:flex-end;
+  font-size:14px;
+}
+.controls label{display:flex;align-items:center;gap:6px;font-size:13px}
+.controls button{padding:6px 8px;border-radius:6px;border:1px solid #ddd;background:#fff}
 
-.table-wrap{overflow:auto;border:1px solid var(--cell-border);border-radius:6px;background:var(--cell-bg)}
-table{border-collapse:collapse;width:100%;min-width:720px}
-th, td{
-  border:1px solid var(--cell-border);
-  padding:var(--cell-padding);
-  text-align:left;
-  vertical-align:top;
-  min-width:120px;
-  height:80px;
+/* Table container */
+.timetable-container{
+  max-width:560px; /* 見本画像の縦長に合わせて狭め */
+  margin:0 auto;
+  padding:18px 12px 26px;
+  background:transparent;
+}
+
+/* Table styling to match provided design */
+table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+  background:transparent;
+  border:1px solid var(--line);
+  box-shadow:none;
+}
+
+/* Header row (曜日) */
+thead th{
+  background:var(--accent);
+  color:#fff;
+  font-weight:600;
+  font-size:15px;
+  padding:10px 6px;
+  text-align:center;
+  border-right:1px solid rgba(255,255,255,0.06);
+}
+
+/* Left column (時限) */
+tbody th{
+  width:54px;
+  background:var(--left-col);
+  color:#333;
+  font-size:22px;
+  font-weight:400;
+  text-align:center;
+  vertical-align:middle;
+  padding:18px 6px;
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+
+/* Cells */
+td{
+  height:72px;
+  min-height:72px;
+  padding:0;
   position:relative;
+  vertical-align:middle;
+  text-align:left;
+  border-left:0;
+  border-bottom:1px solid var(--line);
+  border-right:1px solid var(--line);
+  overflow:hidden;
+  background:#fff;
 }
-th{background:#f3f6fb;font-weight:600;text-align:center}
-.cell-title{font-weight:700;margin-bottom:4px;display:block}
-.cell-meta{font-size:0.9rem;color:#444}
-.cell-time{font-size:0.85rem;color:#666;margin-top:6px}
-.cell-actions{position:absolute;right:6px;top:6px}
-.placeholder{opacity:0.45;font-style:italic;color:#666}
 
-/* セル内の簡易インジケータ（内容あり） */
+/* Make inner cell content centered like the example (empty) */
+td .placeholder{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+  color:#777;
+  font-size:14px;
+}
+
+/* When subject exists, show it neatly */
+.cell-title{
+  padding:8px 10px;
+  font-weight:600;
+  font-size:14px;
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* small indicator at bottom-right when additional details exist */
 .cell-indicator{
-  width:10px;
-  height:10px;
+  width:8px;
+  height:8px;
   border-radius:50%;
   background:var(--accent);
   position:absolute;
   right:8px;
   bottom:8px;
-  box-shadow:0 0 4px rgba(0,0,0,0.15);
+  box-shadow:0 0 2px rgba(0,0,0,0.12);
 }
 
-/* モーダル */
+/* Modal (keep existing but slightly tuned) */
 .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);z-index:9999}
 .hidden{display:none}
 .modal-content{
-  background:#fff;padding:16px;border-radius:8px;max-width:720px;width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.2)
+  background:#fff;padding:18px;border-radius:8px;max-width:720px;width:92%;box-shadow:0 8px 30px rgba(0,0,0,0.18)
 }
 .form-row{margin-bottom:8px}
 .assignments-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
@@ -72,11 +158,9 @@ button.danger{background:#ffdede;border-color:#f0a}
 #saveBtn{background:var(--accent);color:#fff;border:none}
 #saveBtn:hover{filter:brightness(0.95)}
 
-/* モーダルの入力フィールドブロックを区別しやすくする */
-#editFields{margin-bottom:8px}
-
-/* スマホ向け */
+/* Responsive */
 @media(max-width:640px){
-  table{min-width:560px}
-  th,td{min-width:100px;height:72px;padding:6px}
+  .timetable-container{max-width:100%;}
+  tbody th{font-size:18px;padding:12px}
+  td{height:64px}
 }
