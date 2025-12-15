@@ -1,4 +1,4 @@
-// シンプルな時間割アプリ（表示を変更：科目/教室/時間はセル上に常時出さず、編集モードでクリックした場合にのみ表示・編集）
+// シンプルな時間割アプリ（変更: 編集モードでセルをクリックしたら別画面で編集・課題確認を行う）
 (function(){
   // 設定
   const DAYS = ["月","火","水","木","金"];
@@ -137,84 +137,91 @@
     const data = store[cellId];
     td.innerHTML = "";
 
-    // 仕様変更: セル上に科目/教室/時間は常時表示しない
-    // - データがある場合は小さなインジケータを表示するだけ（内容自体は隠す）
-    if(!data || (!data.subject && !data.room && !data.time && !(data.assignments && data.assignments.some(Boolean)))){
-      const ph = document.createElement("div");
-      ph.className = "placeholder";
-      ph.textContent = "（空）";
-      td.appendChild(ph);
-    }else{
-      // 何らかのデータが入っていることを分かる目印だけ出す
+    // 要望: 入力された科目名があればセル上に常時表示する
+    if(data && data.subject){
+      const title = document.createElement("div");
+      title.className = "cell-title";
+      title.textContent = data.subject;
+      td.appendChild(title);
+
+      // 小さなインジケータは残す（課題など他データの有無を示すため）
+      if((data.assignments && data.assignments.some(Boolean)) || data.room || data.time){
+        const indicator = document.createElement("div");
+        indicator.className = "cell-indicator";
+        indicator.title = `詳細あり (${humanLabel(cellId)})`;
+        td.appendChild(indicator);
+      }
+      return;
+    }
+
+    // 科目名がないが他データ（課題チェック等）がある場合は目印のみ表示
+    if(data && ((data.assignments && data.assignments.some(Boolean)) || data.room || data.time)){
       const indicator = document.createElement("div");
       indicator.className = "cell-indicator";
-      indicator.title = "内容あり（クリックで詳細）";
+      indicator.title = `内容あり (${humanLabel(cellId)})`;
       td.appendChild(indicator);
 
-      // 編集モードの場合は、既存データの要約を薄く表示しても良いが
-      // 要望に従い「科目名等は常時表示しない」ため省略する
       const ph = document.createElement("div");
       ph.className = "placeholder";
       ph.textContent = "（登録あり）";
       ph.style.opacity = 0.6;
       td.appendChild(ph);
+      return;
     }
+
+    // 完全に空の場合
+    const ph = document.createElement("div");
+    ph.className = "placeholder";
+    ph.textContent = "（空）";
+    td.appendChild(ph);
   }
 
   function cellIdFor(period, col){
     return `r${period}-c${col}`;
   }
 
+  // r{period}-c{col} を "月1" 形式に変換
+  function humanLabel(cellId){
+    const m = String(cellId).match(/^r(\d+)-c(\d+)$/);
+    if(!m) return cellId;
+    const period = m[1];
+    const col = parseInt(m[2], 10);
+    const day = DAYS[col - 1] || `c${col}`;
+    return `${day}${period}`;
+  }
+
   // モーダル関連
   function openCell(cellId){
+    // 変更: 編集モード ON の場合は別画面で編集（課題確認）を行う
+    if(editToggle.checked){
+      // 別画面へ遷移（クエリで cell を渡す）
+      const url = `assignments.html?cell=${encodeURIComponent(cellId)}`;
+      window.location.href = url;
+      return;
+    }
+
+    // 非編集モードではこれまでどおりモーダルで課題確認のみ
     currentCellId = cellId;
     const data = store[cellId] || createEmptyCell();
 
-    // 課題チェックは常に表示（要求されている「課題の確認ができる」を維持）
+    // 課題チェックは常に表示（コマをクリックしてから）
     buildAssignments(data.assignments || []);
 
-    const editingEnabled = editToggle.checked;
+    // 編集不可の表示（非編集モード）
+    subjectInput.parentElement.style.display = "none";
+    roomInput.parentElement.style.display = "none";
+    timeInput.parentElement.style.display = "none";
 
-    // 編集モードのときのみ科目名等の入力フィールドを表示して編集可能にする
-    // 編集モードでない場合は入力フィールドを非表示にする（課題は操作可能）
-    if(editingEnabled){
-      // 表示して編集可
-      subjectInput.parentElement.style.display = "";
-      roomInput.parentElement.style.display = "";
-      timeInput.parentElement.style.display = "";
+    subjectInput.disabled = true;
+    roomInput.disabled = true;
+    timeInput.disabled = true;
 
-      subjectInput.disabled = false;
-      roomInput.disabled = false;
-      timeInput.disabled = false;
+    saveBtn.style.display = "none";
+    deleteBtn.style.display = "none";
 
-      subjectInput.value = data.subject || "";
-      roomInput.value = data.room || "";
-      timeInput.value = data.time || "";
-
-      saveBtn.style.display = "";
-      deleteBtn.style.display = "";
-    }else{
-      // 非表示かつ編集不可にする
-      subjectInput.parentElement.style.display = "none";
-      roomInput.parentElement.style.display = "none";
-      timeInput.parentElement.style.display = "none";
-
-      subjectInput.disabled = true;
-      roomInput.disabled = true;
-      timeInput.disabled = true;
-
-      saveBtn.style.display = "none";
-      deleteBtn.style.display = "none";
-    }
-
-    // モーダルタイトルにセル情報を追記
     const title = document.getElementById("modalTitle");
-    title.textContent = editingEnabled ? `コマ編集 (${cellId})` : `課題確認 (${cellId})`;
-
+    title.textContent = `課題確認 (${humanLabel(cellId)})`;
     modal.classList.remove("hidden");
-
-    // 編集モードなら最初の入力にフォーカス
-    if(editingEnabled) subjectInput.focus();
   }
 
   function closeModal(){
@@ -249,7 +256,7 @@
         cell.assignments[i] = cb.checked;
         store[currentCellId] = cell;
         saveData();
-        // セルのインジケータは変わる可能性があるので再描画
+        // セル表示（インジケータや科目名の有無）に影響する場合があるので再描画
         renderCell(currentCellId);
       });
       const span = document.createElement("span");
