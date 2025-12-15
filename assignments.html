@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>課題確認・編集</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* assignments.html 用の軽微な追加スタイル */
+    .assign-wrap{max-width:720px;margin:28px auto;padding:18px;background:#fff;border:1px solid #eee;border-radius:6px}
+    .assign-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .assign-header h2{margin:0;font-size:18px}
+    .field{margin-bottom:10px}
+    label{display:block;font-size:14px;margin-bottom:6px}
+    input[type="text"]{width:100%;padding:8px;border:1px solid #ddd;border-radius:6px}
+    .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .back-link{display:inline-block;margin-right:auto;color:#444;text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="assign-wrap" role="main">
+    <div class="assign-header">
+      <a class="back-link" href="index.html">← 戻る</a>
+      <h2 id="pageTitle">課題確認</h2>
+      <div></div>
+    </div>
+
+    <div id="infoArea">
+      <div class="field">
+        <label>セル</label>
+        <div id="cellLabel" style="font-weight:600"></div>
+      </div>
+      <div class="field">
+        <label for="subject">科目名</label>
+        <input id="subject" type="text" />
+      </div>
+      <div class="field">
+        <label for="room">教室</label>
+        <input id="room" type="text" />
+      </div>
+      <div class="field">
+        <label for="time">講義時間</label>
+        <input id="time" type="text" placeholder="例) 10:00-11:30" />
+      </div>
+    </div>
+
+    <fieldset>
+      <legend>課題（15）</legend>
+      <div id="assignmentsGrid" class="assignments-grid" style="margin-top:8px"></div>
+    </fieldset>
+
+    <div class="actions">
+      <button id="deleteBtn" class="danger">削除</button>
+      <button id="saveBtn">保存して戻る</button>
+    </div>
+  </div>
+
+  <script src="assignments.js"></script>
+</body>
+</html>
