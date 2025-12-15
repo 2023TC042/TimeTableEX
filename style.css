@@ -1,5 +1,5 @@
 :root{
-  --accent:#333;        /* ヘッダー色 */
+  --accent:#333;        /* ヘッダー色 / indicator */
   --bg:#ffffff;         /* ページ背景（カラーピッカーで上書き） */
   --line:#cfcfcf;       /* グリッド線 */
   --left-col:#f0f0f0;   /* 左列背景 */
@@ -8,31 +8,42 @@
   --ui-font: system-ui, -apple-system, "Segoe UI", "Noto Sans JP", "Meiryo", sans-serif;
 }
 
-/* Reset-ish */
-*{box-sizing:border-box}
-body{
+/* Full-screen base */
+html,body{
+  height:100%;
   margin:0;
-  padding:32px 20px;
+  padding:0;
+}
+*{box-sizing:border-box}
+
+/* Body and header */
+body{
   background:var(--bg);
   color:var(--text);
   font-family:var(--ui-font);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
 
-/* Header / Title */
+/* Header: set fixed-ish height so timetable can fill remaining area */
 header{
-  max-width:760px;
-  margin:0 auto 18px;
+  height:96px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:12px;
+  padding:12px 24px;
+  border-bottom:1px solid rgba(0,0,0,0.04);
+  background:transparent;
 }
+
+/* Title centered */
 .title-wrap{
-  width:100%;
+  flex:1;
   text-align:center;
 }
 .title-wrap h1{
-  margin:0 0 8px 0;
+  margin:0;
   font-family:var(--title-font);
   font-size:22px;
   letter-spacing:6px;
@@ -40,7 +51,7 @@ header{
   color:#222;
 }
 
-/* Controls (keep small and compact) */
+/* Controls to the right */
 .controls{
   display:flex;
   gap:8px;
@@ -51,65 +62,82 @@ header{
 .controls label{display:flex;align-items:center;gap:6px;font-size:13px}
 .controls button{padding:6px 8px;border-radius:6px;border:1px solid #ddd;background:#fff}
 
-/* Table container */
+/* Full-screen timetable area */
 .timetable-container{
-  max-width:560px; /* 見本画像の縦長に合わせて狭め */
-  margin:0 auto;
-  padding:18px 12px 26px;
+  width:100vw;
+  height:calc(100vh - 96px); /* full height minus header */
+  padding:18px 28px;
+  overflow:auto;
   background:transparent;
 }
 
-/* Table styling to match provided design */
+/* Table fills available area and shows clear grid */
 table{
   width:100%;
+  height:100%;
   border-collapse:collapse;
   table-layout:fixed;
   background:transparent;
-  border:1px solid var(--line);
-  box-shadow:none;
+  border:1px solid var(--line); /* outer border */
 }
 
-/* Header row (曜日) */
+/* Weekday header row */
 thead th{
   background:var(--accent);
   color:#fff;
   font-weight:600;
   font-size:15px;
-  padding:10px 6px;
+  padding:12px 8px;
   text-align:center;
-  border-right:1px solid rgba(255,255,255,0.06);
+  border:1px solid var(--line); /* ensure grid borders on all sides */
+  height:56px; /* used to calculate row heights */
+  vertical-align:middle;
 }
 
-/* Left column (時限) */
+/* Left column for period numbers */
 tbody th{
-  width:54px;
+  width:72px;
   background:var(--left-col);
   color:#333;
   font-size:22px;
   font-weight:400;
   text-align:center;
   vertical-align:middle;
-  padding:18px 6px;
-  border-right:1px solid var(--line);
-  border-bottom:1px solid var(--line);
+  padding:8px;
+  border:1px solid var(--line);
 }
 
-/* Cells */
+/* Grid cells: strong visible borders (格子) */
 td{
-  height:72px;
-  min-height:72px;
   padding:0;
   position:relative;
   vertical-align:middle;
-  text-align:left;
-  border-left:0;
-  border-bottom:1px solid var(--line);
-  border-right:1px solid var(--line);
-  overflow:hidden;
+  text-align:center; /* center like the sample image */
+  border:1px solid var(--line); /* ensure every cell has borders */
   background:#fff;
+  overflow:hidden;
 }
 
-/* Make inner cell content centered like the example (empty) */
+/* Make tbody rows share remaining height equally */
+tbody{
+  height:calc(100% - 56px); /* subtract header row height */
+  display:block;
+}
+tbody tr{
+  display:table;
+  width:100%;
+  table-layout:fixed;
+  height:calc((100%)/6); /* 6時限で均等に分割 */
+}
+
+/* When table is narrower, allow scroll */
+table thead, table tbody{
+  display:table;
+  width:100%;
+  table-layout:fixed;
+}
+
+/* Cell placeholder centered */
 td .placeholder{
   display:flex;
   align-items:center;
@@ -119,7 +147,7 @@ td .placeholder{
   font-size:14px;
 }
 
-/* When subject exists, show it neatly */
+/* Display subject name nicely when present */
 .cell-title{
   padding:8px 10px;
   font-weight:600;
@@ -128,6 +156,8 @@ td .placeholder{
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+  display:block;
+  margin:0 auto;
 }
 
 /* small indicator at bottom-right when additional details exist */
@@ -142,7 +172,7 @@ td .placeholder{
   box-shadow:0 0 2px rgba(0,0,0,0.12);
 }
 
-/* Modal (keep existing but slightly tuned) */
+/* Modal styles (unchanged, tuned) */
 .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);z-index:9999}
 .hidden{display:none}
 .modal-content{
@@ -158,9 +188,16 @@ button.danger{background:#ffdede;border-color:#f0a}
 #saveBtn{background:var(--accent);color:#fff;border:none}
 #saveBtn:hover{filter:brightness(0.95)}
 
-/* Responsive */
+/* Responsive: allow vertical stacking on very small heights */
+@media(max-height:600px){
+  tbody tr{height:auto}
+  .timetable-container{height:auto; min-height:420px}
+}
+
+/* Small screens: allow horizontal scroll if needed */
 @media(max-width:640px){
-  .timetable-container{max-width:100%;}
-  tbody th{font-size:18px;padding:12px}
-  td{height:64px}
+  .timetable-container{padding:12px}
+  thead th{font-size:13px;padding:8px}
+  tbody th{font-size:18px;padding:8px;width:56px}
+  td{min-width:80px}
 }
