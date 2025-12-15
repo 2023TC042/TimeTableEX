@@ -3,12 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>時間割表アプリ</title>
+  <title>時間割表</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
-    <h1>時間割表</h1>
+    <div class="title-wrap">
+      <h1>時間割表</h1>
+    </div>
+
+    <!-- コントロールは残しています（必要なら非表示にできます） -->
     <div class="controls">
       <label>
         編集モード
@@ -23,7 +27,7 @@
   </header>
 
   <main>
-    <div class="table-wrap">
+    <div class="timetable-container">
       <table id="timetable" aria-label="時間割表"></table>
     </div>
   </main>
@@ -33,14 +37,16 @@
     <div class="modal-content">
       <h2 id="modalTitle">コマ編集</h2>
       <form id="cellForm">
-        <div class="form-row">
-          <label>科目名: <input type="text" id="subject" /></label>
-        </div>
-        <div class="form-row">
-          <label>教室: <input type="text" id="room" /></label>
-        </div>
-        <div class="form-row">
-          <label>講義時間: <input type="text" id="time" placeholder="例) 10:00-11:30" /></label>
+        <div id="editFields">
+          <div class="form-row">
+            <label>科目名: <input type="text" id="subject" /></label>
+          </div>
+          <div class="form-row">
+            <label>教室: <input type="text" id="room" /></label>
+          </div>
+          <div class="form-row">
+            <label>講義時間: <input type="text" id="time" placeholder="例) 10:00-11:30" /></label>
+          </div>
         </div>
 
         <fieldset class="assignments">
